@@ -44,54 +44,55 @@ const itemsData = [
     item: 'Persil',
     shop: 'Hofer',
     inStoreLocation: 'Čistila',
-    importance: 'high',
+    importance: 'visoko',
   },
   {
     id: 2,
     item: 'Kosmiči',
     shop: 'Spar',
     inStoreLocation: 'Kosmiči',
-    importance: '',
+    importance: 'srednje',
   },
   {
     id: 3,
     item: 'Jogurti',
     shop: 'Lidl',
     inStoreLocation: 'Mlečni izdelki',
-    importance: 'low',
+    importance: 'nizko',
   },
   {
     id: 4,
     item: 'Pizza',
     shop: 'Lidl',
     inStoreLocation: 'Zamrznjena živila',
-    importance: 'high',
+    importance: 'visoko',
   },
   {
     id: 5,
     item: 'Sok',
     shop: 'Lidl',
     inStoreLocation: 'pecivo',
-    importance: 'low',
+    importance: 'srednje',
   },
 ];
 
 function App() {
-  const [inputItems, setInputItems] = useState(itemsData);
+  const [shoppingItems, setShoppingItems] = useState(itemsData);
+  const [sortItemsByOption, setSortItemsByOption] = useState([]);
 
   function addItem(newItem) {
     if (!newItem) return;
-    setInputItems((items) => [...items, newItem].toSorted((a, b) => a - b));
-    console.log(shopData);
+    setShoppingItems((items) => [...items, newItem].toSorted((a, b) => a - b));
+    // console.log(shopData);
   }
 
   function deleteItem(reducedItems) {
     if (!reducedItems) return;
-    setInputItems(() => [...reducedItems]);
+    setShoppingItems(() => [...reducedItems]);
     // console.log(itemToDelete);
   }
 
-  // console.log(inputItems);
+  // console.log(shoppingItems);
   // console.log(input);
   // console.log(selectedShop);
   // console.log(selectedImportance);
@@ -103,8 +104,8 @@ function App() {
         inStoreLocationData={inStoreLocationData}
         onAddItem={addItem}
       />
-      <List inputItems={inputItems} deleteItem={deleteItem} />
-      <PrintList />
+      <List shoppingItems={shoppingItems} deleteItem={deleteItem} />
+      <PrintedList shoppingItems={shoppingItems} deleteItem={deleteItem} />
     </div>
   );
 }
@@ -193,9 +194,10 @@ function Form({ shopData, inStoreLocationData, onAddItem }) {
           onChange={(e) => setImportance(e.target.value)}
         >
           <option disabled>POMEMBNOST</option>
-          <option value='high'>Nujno</option>
-          <option value='medium'>Bo potrebno</option>
-          <option value='low '>Ni potrebno</option>
+
+          <option value='high'>Visoko</option>
+          <option value='mid'>Srednje</option>
+          <option value='low '>Ni pomembno</option>
         </select>
 
         <button
@@ -209,19 +211,20 @@ function Form({ shopData, inStoreLocationData, onAddItem }) {
   );
 }
 
-function List({ inputItems, deleteItem }) {
+function List({ shoppingItems, deleteItem }) {
   return (
     <div className='list'>
-      <Item inputItems={inputItems} onDeleteItem={deleteItem} />
+      <Items shoppingItems={shoppingItems} onDeleteItem={deleteItem} />
+      <SortPrint shoppingItems={shoppingItems} />
     </div>
   );
 }
 
-function Item({ inputItems, onDeleteItem }) {
-  console.log(inputItems);
+function Items({ shoppingItems, onDeleteItem }) {
+  // console.log(shoppingItems);
 
   function handleClick(itemToDelete) {
-    let reducedItems = inputItems.filter((item) => item !== itemToDelete);
+    let reducedItems = shoppingItems.filter((item) => item !== itemToDelete);
 
     if (!itemToDelete) return;
     console.log(reducedItems);
@@ -241,17 +244,15 @@ function Item({ inputItems, onDeleteItem }) {
             <th className='margin-left'>Izbriši</th>
           </tr>
         </thead>
-        <tbody>
-          {inputItems.map((item) => (
+        <tbody className='table-body'>
+          {shoppingItems.map((item) => (
             <tr key={item.id} className='v-divider'>
               <td>{item.item.charAt(0).toUpperCase() + item.item.slice(1)}</td>
 
               <td>{item.shop}</td>
               <td>{item.inStoreLocation}</td>
               <td>
-                <div
-                  className={item.importance === 'high' ? 'red' : 'orange'}
-                ></div>
+                <div className={`color ${item.importance}`}></div>
               </td>
               <td className='delete'>
                 <button
@@ -265,18 +266,96 @@ function Item({ inputItems, onDeleteItem }) {
           ))}
         </tbody>
       </table>
-      <SortPrint />
     </div>
   );
 }
 
-function SortPrint() {
-  return <div className='sort-print'></div>;
+function SortPrint({ shoppingItems }) {
+  const [shopToPrint, setShopToPrint] = useState('');
+  const [importanceToPrint, setImportanceToPrint] = useState('');
+
+  let isItem = false;
+
+  if (shopToPrint || importanceToPrint) {
+    isItem = true;
+  } else isItem = false;
+
+  function handleShop(e) {
+    setShopToPrint(e.target.value);
+    setImportanceToPrint('');
+  }
+  function handleImportance(e) {
+    setImportanceToPrint(e.target.value);
+    setShopToPrint('');
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const printShopItems = shoppingItems.filter(
+      (el) => el.shop === shopToPrint
+    );
+    console.log(printShopItems);
+  }
+
+  if (!shoppingItems) return;
+  console.log(isItem);
+  console.log(`Shop: ${shopToPrint}`);
+  console.log(`Importance: ${importanceToPrint}`);
+
+  const uniqueShops = [...new Set(shoppingItems.map((item) => item.shop))];
+  const uniqueImportance = [
+    ...new Set(shoppingItems.map((item) => item.importance)),
+  ];
+  console.log(uniqueShops);
+  console.log(uniqueImportance);
+
+  return (
+    <div className='sort-print'>
+      <h2>PRIPRAVI LISTEK</h2>
+      <p>Izberi opcijo in sortiraj izdelke.</p>
+
+      <form action='submit' className='form'>
+        <select
+          id='select-shop'
+          className='sort'
+          value={!shopToPrint ? 'TRGOVINA' : shopToPrint}
+          onChange={handleShop}
+          // disabled={importanceToPrint ? true : null}
+        >
+          <option disabled>TRGOVINA</option>
+          {uniqueShops.map((item, index) => (
+            <option id={index + 200} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+
+        <select
+          id='importance'
+          value={!importanceToPrint ? 'POMEMBNOST' : importanceToPrint}
+          onChange={handleImportance}
+          // disabled={shopToPrint ? true : null}
+        >
+          <option disabled>POMEMBNOST</option>
+          {uniqueImportance.map((item) => (
+            <option value={item}>{item}</option>
+          ))}
+        </select>
+        <button
+          onSubmit={handleSubmit}
+          type='submit'
+          className={!isItem ? 'button btn-disabled' : 'button'}
+        >
+          {!isItem ? 'IZBERI OPCIJO' : 'NATISNI LISTEK'}{' '}
+        </button>
+      </form>
+    </div>
+  );
 }
-function PrintList() {
+function PrintedList() {
   return (
     <div className='print-list'>
-      <h2>Listek izdelkov</h2>
+      <h2>Printed list</h2>
     </div>
   );
 }
